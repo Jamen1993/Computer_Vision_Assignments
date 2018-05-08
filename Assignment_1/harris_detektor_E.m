@@ -1,4 +1,4 @@
-function merkmale = harris_detektor_C(input_image, varargin)
+function merkmale = harris_detektor_E(input_image, varargin)
     % In dieser Funktion soll der Harris-Detektor implementiert werden, der
     % Merkmalspunkte aus dem Bild extrahiert
 
