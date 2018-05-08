@@ -7,7 +7,6 @@ function merkmale = harris_detektor_A(input_image, varargin)
     % input_image + 4 name value pairs = 9 Parameter
     if nargin > 9
        error("Zu viele Parameter");
-       return;
     end
 
     % Parameter entsprechend Beschreibung parsen; Standardwerte setzen und prüfen.
