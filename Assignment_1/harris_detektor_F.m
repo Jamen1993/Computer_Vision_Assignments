@@ -80,15 +80,10 @@ function merkmale = harris_detektor_F(input_image, varargin)
     % Rand mit Nullen um corners hinzufügen
     corners_padded = zeros(size(corners) + 2 * min_dist);
     corners_padded((min_dist + 1):(end - min_dist), (min_dist + 1):(end - min_dist)) = corners;
-    % corners_padded vektorisieren und absteigend sortieren
+    % corners_padded spaltenweise vektorisieren und absteigend sortieren
     [B, I] = sort(corners_padded(:), 'descend');
     % Indizes zu Elementen ungleich null finden
-    indices_without_zero = I(B ~= 0);
-    % Ursprüngliche Indizes rekonstruieren
-    y = ceil(indices_without_zero ./ size(corners_padded, 1));
-    x = mod(indices_without_zero, size(corners_padded, 1));
-
-    sorted_index = [x'; y'];
+    sorted_index = I(B ~= 0);
 
     merkmale = {corners_padded, sorted_index};
 
