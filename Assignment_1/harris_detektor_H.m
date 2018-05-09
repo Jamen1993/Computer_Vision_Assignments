@@ -128,6 +128,8 @@ function merkmale = harris_detektor_H(input_image, varargin)
             it_merkmale = it_merkmale + 1;
         end
     end
+    % Indexverschiebung vom Bild mit Padding zum Bild ohne Padding
+    merkmale = merkmale - min_dist;
     % Ausgabematrix auf tatsächliche Anzahl von gefundenen Merkmalen zuschneiden
     merkmale(:, it_merkmale:end) = [];
 
