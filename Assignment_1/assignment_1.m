@@ -3,10 +3,10 @@ close all;
 
 img = imread('Test_Image.jpg');
 gray = rgb_to_gray(img);
-merkmale = harris_detektor_F(gray, 'segment_length', 9, 'k', 0.06);
+merkmale = harris_detektor_G(gray, 'segment_length', 9, 'k', 0.06);
 
-% corners
-corners = merkmale{1};
+% Akkumulatorfeld
+AKKA = merkmale{1};
 
-% sorted indey
-sorted_index = merkmale{2};
+% Merkmale
+merkmale = merkmale{2};
