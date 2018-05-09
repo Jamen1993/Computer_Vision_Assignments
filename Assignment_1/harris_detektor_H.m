@@ -4,7 +4,7 @@ function merkmale = harris_detektor_H(input_image, varargin)
 
     %% Input parser
     % input_image + 7 name value pairs = 15 Parameter
-    if nargin > 9
+    if nargin > 15
         error("Zu viele Parameter");
     end
 
@@ -70,7 +70,7 @@ function merkmale = harris_detektor_H(input_image, varargin)
     H_without_margin((margin_size + 1):(end - margin_size), (margin_size + 1):(end - margin_size)) = H((margin_size + 1):(end - margin_size), (margin_size + 1):(end - margin_size));
     % Schwellwert für Ecke prüfen
     pixels_above_threshold = H_without_margin > tau;
-    % Pixel ohne Ecken eliminieren
+    % Pixel ohne Ecken durch Maskierung eliminieren
     corners = H_without_margin .* pixels_above_threshold;
     % Pixelkoordinaten der Ecken in Array zusammenfassen
     [y, x] = find(pixels_above_threshold);
@@ -81,6 +81,7 @@ function merkmale = harris_detektor_H(input_image, varargin)
     corners_padded = zeros(size(corners) + 2 * min_dist);
     corners_padded((min_dist + 1):(end - min_dist), (min_dist + 1):(end - min_dist)) = corners;
     % corners_padded spaltenweise vektorisieren und absteigend sortieren
+    % Eine Alternative ist hier die sort rows Funktion in Kombination mit meshgrid, mit der die Indexinformationen gleich mit sortiert werden können. Ich muss hier stattdessen später eine recht aufwändige Berechnung durchführen, um die Indizes wieder zu finden.
     [B, I] = sort(corners_padded(:), 'descend');
     % Indizes zu Elementen ungleich null finden
     sorted_index = I(B ~= 0);
@@ -93,25 +94,49 @@ function merkmale = harris_detektor_H(input_image, varargin)
     merkmale = zeros(2, n_merkmale);
 
     %% Merkmalsbestimmung mit Mindestabstand und Maximalzahl pro Kachel
-    % Im ersten Schritt werden ausgehend von den stärksten Merkmalen die Mindestabstände geprüft und andere Merkmale innerhalb des Bereichs verworfen.
-    corners_min_dist = logical(corners_padded);
-    % Maske generieren
+    % Diese Maske wird verwendet, um mit Hilfe der Cake-Maske die Merkmalsdichte entsprechend min_dist zu reduzieren.
+    min_dist_mask = logical(corners_padded);
+    % Cake-Maske generieren
     Cake = cake(min_dist);
+    % Jetzt werden einige Berechnungen durchgeführt, um für jedes Merkmal in der sortierten Liste die Position zu rekonstruieren. Das ermöglicht in der Iteration über die Liste eine schnelle Ausführung, da nur Daten nachgesehen werden müssen.
+    % Indizes der sortierten Merkmale berechnen, also Indizes devektorisieren
+    ix = ceil(sorted_index ./ size(corners_padded, 1));
+    iy = sorted_index - ((ix - 1) .* size(corners_padded, 1));
+    % Kachel der sortierten Merkmale berechnen
+    % Vorher muss eine Indexverschiebung vom Bild mit Padding zum Bild ohne Padding durchgeführt werden, denn die Position der Kacheln ist auf das Bild ohne Padding bezogen.
+    % Die Kx und Ky im linken und oberen Padding sind jetzt 0 und damit ungültig. Da sich im Padding aber keine Merkmale befinden, werden diese nie abgerufen und können ignoriert werden.
+    Kx = ceil((ix - min_dist) ./ tile_size(2));
+    Ky = ceil((iy - min_dist) ./ tile_size(1));
+    % Iterator für gefundene Merkmale
+    it_merkmale = 1;
     % for each Merkmal in sorted_index
-    for it_index = 1:length(sorted_index)
-        % Indizes des Merkmals berechnen
-        y_Merkmal = ceil(sorted_index(it_index) / size(corners, 1)) + min_dist;
-        x_Merkmal = mod(sorted_index(it_index), size(corners, 1)) + min_dist;
-        % Bereich um Merkmal ausmaskieren
-        corners_min_dist((y_Merkmal - min_dist):(y_Merkmal + min_dist), (x_Merkmal - min_dist):(x_Merkmal + min_dist)) = corners_min_dist((y_Merkmal - min_dist):(y_Merkmal + min_dist), (x_Merkmal - min_dist):(x_Merkmal + min_dist)) .* Cake;
+    for it = 1:length(sorted_index)
+        % Wenn das Merkmal nicht vorhanden ist, wurde es bereits ausmaskiert und ist damit ungültig -> überspringen
+        if ~min_dist_mask(iy(it), ix(it))
+            continue;
+        else
+            % Bereich um Merkmal ausmaskieren
+            min_dist_mask((iy(it) - min_dist):(iy(it) + min_dist), (ix(it) - min_dist):(ix(it) + min_dist)) = min_dist_mask((iy(it) - min_dist):(iy(it) + min_dist), (ix(it) - min_dist):(ix(it) + min_dist)) .* Cake;
+        end
+        % In der Kachel um das Merkmal wurden schon N stärkere Merkmale gefunden -> überspringen
+        if AKKA(Ky(it), Kx(it)) >= N
+            continue;
+        else
+            % Akkumulator inkrementieren und Merkmal aufnehmen
+            AKKA(Ky(it), Kx(it)) = AKKA(Ky(it), Kx(it)) + 1;
+            merkmale(:, it_merkmale) = [ix(it); iy(it)];
+            it_merkmale = it_merkmale + 1;
+        end
     end
+    % Ausgabematrix auf tatsächliche Anzahl von gefundenen Merkmalen zuschneiden
+    merkmale(:, it_merkmale:end) = [];
 
     %% Plot
     if do_plot
         figure('name', 'Merkmale');
         imshow(input_image);
         hold on;
-        plot(x, y, 'or');
+        plot(merkmale(1,:), merkmale(2, :), 'or');
         hold off;
         legend('Detektierte Ecken');
     end
