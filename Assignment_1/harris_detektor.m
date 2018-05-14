@@ -1,6 +1,6 @@
 function merkmale = harris_detektor(input_image, varargin)
     % In dieser Funktion soll der Harris-Detektor implementiert werden, der
-    % Merkmalspunkte aus dem Bild extrahiert
+    % Merkmalspunkte aus dem Bild extrahiert.
 
     %% Input parser
     % input_image + 7 name value pairs = 15 Parameter
@@ -8,7 +8,8 @@ function merkmale = harris_detektor(input_image, varargin)
         error("Zu viele Parameter");
     end
 
-    % Parameter entsprechend Beschreibung parsen; Standardwerte setzen und prüfen.
+    % Parameter entsprechend Beschreibung parsen
+    % Standardwerte setzen und prüfen.
     p = inputParser;
 
     addParameter(p, 'segment_length', 15, @(x) assert(isnumeric(x) && isscalar(x) && mod(x,2) == 1 && x > 1, 'segment_length muss eine ungerade Ganzzahl größer 1 sein'));
@@ -43,16 +44,17 @@ function merkmale = harris_detektor(input_image, varargin)
     % Gewichtung mit Hammingfenster
     max_index = (segment_length - 1);
     index = 0:max_index;
+    % Formel aus Matlab Dokumentation
     w = 0.54 - 0.46*cos(2*pi*index/max_index);
     w_norm = w / sum(w);
-    % Kombiniert zu separablem Filter
+    % Zu zweidimensionalem separablem Filter kombinieren
     W = w_norm' * w_norm;
     % Harris Matrix G
     % Komponenten der Harrismatrix für jedes Pixel berechnen
     G11 = Ix .^ 2;
     G12 = Ix .* Iy;
     G22 = Iy .^ 2;
-    % Komponenten mit Fensterfunktion falten, um mittigen Pixeln mehr Gewicht zu verleihen
+    % Komponenten mit Filterfunktion falten, um sie zu glätten und mittigen Pixeln mehr Gewicht zu verleihen.
     G11_filtered = conv2(G11, W, 'same');
     G12_filtered = conv2(G12, W, 'same');
     G22_filtered = conv2(G22, W, 'same');
@@ -65,32 +67,36 @@ function merkmale = harris_detektor(input_image, varargin)
     % Harrismetrik für jedes Pixel
     H = G_det - k .* G_tr .^ 2;
     % Am Rand ist die Harrismetrik aufgrund von Unregelmäßigkeiten bei der Interpolation im vorherigen Abschnitt groß. Das führt bei der Intepretation der Metrik fälschlicherweise zur Detektion von Kanten. Der Rand muss also als ungültig erklärt werden, was durch Ersatz mit 0 möglich ist.
-    margin_size = ceil(segment_length / 2);
-    H_without_margin = zeros(size(H));
-    H_without_margin((margin_size + 1):(end - margin_size), (margin_size + 1):(end - margin_size)) = H((margin_size + 1):(end - margin_size), (margin_size + 1):(end - margin_size));
-    % Schwellwert für Ecke prüfen
-    pixels_above_threshold = H_without_margin > tau;
+    % margin size
+    ms = ceil(segment_length / 2);
+    % Maske für Rand erstellen
+    mask = true(size(H));
+    mask((ms + 1):(end - ms), (ms + 1):(end - ms)) = false;
+    % Rand mit maske zu Null setzen
+    H_margin = H;
+    H_margin(mask) = 0;
     % Pixel ohne Ecken durch Maskierung eliminieren
-    corners = H_without_margin .* pixels_above_threshold;
-    % Pixelkoordinaten der Ecken in Array zusammenfassen
-    [y, x] = find(pixels_above_threshold);
-    features = [x'; y'];
+    corners = H_margin;
+    corners(corners <= tau) = 0;
 
     %% Merkmalsvorbereitung
     % Rand mit Nullen um corners hinzufügen
+    % Der Rand wird benötigt, damit später die Cake-Maske angewandt werden kann ohne, dass es am Rand zu Konflikten bei der Indizierung kommt.
     corners_padded = zeros(size(corners) + 2 * min_dist);
     corners_padded((min_dist + 1):(end - min_dist), (min_dist + 1):(end - min_dist)) = corners;
-    % corners_padded spaltenweise vektorisieren und absteigend sortieren
-    % Eine Alternative ist hier die sort rows Funktion in Kombination mit meshgrid, mit der die Indexinformationen gleich mit sortiert werden können. Ich muss hier stattdessen später eine recht aufwändige Berechnung durchführen, um die Indizes wieder zu finden.
-    [B, I] = sort(corners_padded(:), 'descend');
-    % Indizes zu Elementen ungleich null finden
-    sorted_index = I(B ~= 0);
+    % corners_padded spaltenweise vektorisieren und Index der ursprünglichen Position hinzufügen
+    [X, Y] = meshgrid(1:size(corners_padded, 2), 1:size(corners_padded, 1));
+    corners_indices = [corners_padded(:), Y(:), X(:)];
+    % Reihen mit Merkmalsstärke 0 eliminieren
+    corners_indices = corners_indices((corners_padded(:) ~= 0), :);
+    % Reihen entsprechend der Merkmalsstärke absteigend sortieren
+    corners_indices_sorted = sortrows(corners_indices, 'descend');
 
     %% Akkumulatorfeld
     % Kacheln gleichverteilt über Bild
     AKKA = zeros(ceil(size(input_image) ./ tile_size));
     % Nach der Verareitung kann es maximal N Merkmale pro Kachel geben aber auch nur dann, wenn die Anzahl der gefundenen Merkmale die Anzahl der möglichen Merkmale übersteigt. Ansonsten sind nur so viele Merkmale möglich, wie bereits vorher gefunden wurden.
-    n_merkmale = min([length(sorted_index), numel(AKKA) * N]);
+    n_merkmale = min([length(corners_indices_sorted), numel(AKKA) * N]);
     merkmale = zeros(2, n_merkmale);
 
     %% Merkmalsbestimmung mit Mindestabstand und Maximalzahl pro Kachel
@@ -98,19 +104,19 @@ function merkmale = harris_detektor(input_image, varargin)
     min_dist_mask = logical(corners_padded);
     % Cake-Maske generieren
     Cake = cake(min_dist);
-    % Jetzt werden einige Berechnungen durchgeführt, um für jedes Merkmal in der sortierten Liste die Position zu rekonstruieren. Das ermöglicht in der Iteration über die Liste eine schnelle Ausführung, da nur Daten nachgesehen werden müssen.
-    % Indizes der sortierten Merkmale berechnen, also Indizes devektorisieren
-    ix = ceil(sorted_index ./ size(corners_padded, 1));
-    iy = sorted_index - ((ix - 1) .* size(corners_padded, 1));
+    % Merkmale und Indizes aus corners_indices_sorted extrahieren
+    corners_sorted = corners_indices_sorted(:, 1);
+    iy = corners_indices_sorted(:, 2);
+    ix = corners_indices_sorted(:, 3);
     % Kachel der sortierten Merkmale berechnen
     % Vorher muss eine Indexverschiebung vom Bild mit Padding zum Bild ohne Padding durchgeführt werden, denn die Position der Kacheln ist auf das Bild ohne Padding bezogen.
     % Die Kx und Ky im linken und oberen Padding sind jetzt 0 und damit ungültig. Da sich im Padding aber keine Merkmale befinden, werden diese nie abgerufen und können ignoriert werden.
-    Kx = ceil((ix - min_dist) ./ tile_size(2));
     Ky = ceil((iy - min_dist) ./ tile_size(1));
+    Kx = ceil((ix - min_dist) ./ tile_size(2));
     % Iterator für gefundene Merkmale
     it_merkmale = 1;
-    % for each Merkmal in sorted_index
-    for it = 1:length(sorted_index)
+    % for each in corners_sorted
+    for it = 1:length(corners_sorted)
         % Wenn das Merkmal nicht vorhanden ist, wurde es bereits ausmaskiert und ist damit ungültig -> überspringen
         if ~min_dist_mask(iy(it), ix(it))
             continue;
@@ -138,7 +144,7 @@ function merkmale = harris_detektor(input_image, varargin)
         figure('name', 'Merkmale');
         imshow(input_image);
         hold on;
-        plot(merkmale(1,:), merkmale(2, :), 'or');
+        plot(merkmale(1,:), merkmale(2, :), 'oxr');
         hold off;
         legend('Detektierte Ecken');
     end
