@@ -144,7 +144,7 @@ function merkmale = harris_detektor(input_image, varargin)
         figure('name', 'Merkmale');
         imshow(input_image);
         hold on;
-        plot(merkmale(1,:), merkmale(2, :), 'oxr');
+        plot(merkmale(1,:), merkmale(2, :), 'or');
         hold off;
         legend('Detektierte Ecken');
     end
