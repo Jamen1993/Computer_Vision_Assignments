@@ -6,10 +6,11 @@ function Cake = cake(min_dist)
 
     % Matrix generieren in der jedes Element seinen Abstand vom Mittelpunkt entsprechend euklidischer Norm repräsentiert.
     index = -min_dist:min_dist;
-    [X, Y] = meshgrid(index, index);
+    [X, Y] = meshgrid(index);
     distances = sqrt(X .^ 2 + Y .^ 2);
     % Elemente mit Abstand kleiner gleich min_dist zu Null setzen
-    Cake = ones(min_dist * 2 + 1) .* (distances > min_dist);
+    Cake = ones(min_dist * 2 + 1);
+    Cake(distances <= min_dist) = 0;
     % Konvertierung in boolsche Maske
     Cake = logical(Cake);
 end
