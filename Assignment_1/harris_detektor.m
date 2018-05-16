@@ -68,10 +68,10 @@ function merkmale = harris_detektor(input_image, varargin)
     H = G_det - k .* G_tr .^ 2;
     % Am Rand ist die Harrismetrik aufgrund von Unregelmäßigkeiten bei der Interpolation im vorherigen Abschnitt groß. Das führt bei der Intepretation der Metrik fälschlicherweise zur Detektion von Kanten. Der Rand muss also als ungültig erklärt werden, was durch Ersatz mit 0 möglich ist.
     % margin size
-    ms = ceil(segment_length / 2);
+    margin_size = ceil(segment_length / 2);
     % Maske für Rand erstellen
     mask = true(size(H));
-    mask((ms + 1):(end - ms), (ms + 1):(end - ms)) = false;
+    mask((margin_size + 1):(end - margin_size), (margin_size + 1):(end - margin_size)) = false;
     % Rand mit maske zu Null setzen
     H_margin = H;
     H_margin(mask) = 0;
@@ -88,7 +88,7 @@ function merkmale = harris_detektor(input_image, varargin)
     [X, Y] = meshgrid(1:size(corners_padded, 2), 1:size(corners_padded, 1));
     corners_indices = [corners_padded(:), Y(:), X(:)];
     % Reihen mit Merkmalsstärke 0 eliminieren
-    corners_indices = corners_indices((corners_padded(:) ~= 0), :);
+    corners_indices((corners_padded(:) == 0), :) = [];
     % Reihen entsprechend der Merkmalsstärke absteigend sortieren
     corners_indices_sorted = sortrows(corners_indices, 'descend');
 
@@ -113,6 +113,8 @@ function merkmale = harris_detektor(input_image, varargin)
     % Die Kx und Ky im linken und oberen Padding sind jetzt 0 und damit ungültig. Da sich im Padding aber keine Merkmale befinden, werden diese nie abgerufen und können ignoriert werden.
     Ky = ceil((iy - min_dist) ./ tile_size(1));
     Kx = ceil((ix - min_dist) ./ tile_size(2));
+    % Vektor für Indizierung bei der Maskierung mit Cake im Voraus berechnen
+    min_dist_range = -min_dist:min_dist;
     % Iterator für gefundene Merkmale
     it_merkmale = 1;
     % for each in corners_sorted
@@ -122,7 +124,9 @@ function merkmale = harris_detektor(input_image, varargin)
             continue;
         else
             % Bereich um Merkmal ausmaskieren
-            min_dist_mask((iy(it) - min_dist):(iy(it) + min_dist), (ix(it) - min_dist):(ix(it) + min_dist)) = min_dist_mask((iy(it) - min_dist):(iy(it) + min_dist), (ix(it) - min_dist):(ix(it) + min_dist)) .* Cake;
+            n = iy(it) + min_dist_range;
+            m = ix(it) + min_dist_range;
+            min_dist_mask(n, m) = min_dist_mask(n, m) & Cake;
         end
         % In der Kachel um das Merkmal wurden schon N stärkere Merkmale gefunden -> überspringen
         if AKKA(Ky(it), Kx(it)) >= N
