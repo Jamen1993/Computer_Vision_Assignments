@@ -1,6 +1,7 @@
 % Testscript für Assignment 2
 close all;
 
+addpath('../Images');
 addpath('../Assignment_1');
 
 Image1 = imread('Scene_L.png');
