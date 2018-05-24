@@ -5,19 +5,18 @@ function merkmale = harris_detektor(input_image, varargin)
     %% Input parser
     % input_image + 7 name value pairs = 15 Parameter
     if nargin > 15
-        error("Zu viele Parameter");
+        error('Zu viele Parameter');
     end
 
-    % Parameter entsprechend Beschreibung parsen
-    % Standardwerte setzen und prüfen.
+    % Parameter entsprechend Beschreibung parsen; Standardwerte setzen und prüfen.
     p = inputParser;
 
     addParameter(p, 'segment_length', 15, @(x) assert(isnumeric(x) && isscalar(x) && mod(x,2) == 1 && x > 1, 'segment_length muss eine ungerade Ganzzahl größer 1 sein'));
-    addParameter(p, 'k', 0.05, @(x) assert(isnumeric(x) && isscalar(x) && 0 <= x && x <= 1, 'k muss eine Reelle Zahl im Intervall [0; 1] sein.'));
-    addParameter(p, 'tau', 1e6, @(x) assert(isnumeric(x) && isscalar(x) && x > 0, 'tau muss eine Reelle Zahl größer 0 sein'));
-    addParameter(p, 'do_plot', false, @(x) assert(islogical(x), 'k muss ein logical sein.'));
-    addParameter(p, 'min_dist', 20, @(x) assert(isnumeric(x) && x >= 1, 'min_dist muss eine Reelle Zahl größer gleich 1 sein.'));
-    addParameter(p, 'tile_size', 200, @(x) assert(isnumeric(x) && prod(x >= 1) == 1 , 'min_dist muss eine Ganzzahl größer gleich 1 sein.'));
+    addParameter(p, 'k', 0.05, @(x) assert(isnumeric(x) && isscalar(x) && 0 <= x && x <= 1, 'k muss eine reelle Zahl im Intervall [0; 1] sein.'));
+    addParameter(p, 'tau', 1e6, @(x) assert(isnumeric(x) && isscalar(x) && x > 0, 'tau muss eine reelle Zahl größer 0 sein'));
+    addParameter(p, 'do_plot', false, @(x) assert(islogical(x), 'do_plot muss ein logical sein.'));
+    addParameter(p, 'min_dist', 20, @(x) assert(isnumeric(x) && x >= 1, 'min_dist muss eine reelle Zahl größer gleich 1 sein.'));
+    addParameter(p, 'tile_size', 200, @(x) assert(isnumeric(x) && prod(x >= 1) == 1 , 'tile_size muss eine Ganzzahl größer gleich 1 sein.'));
     addParameter(p, 'N', 5, @(x) assert(isnumeric(x) && x >= 1, 'N muss eine Ganzzahl größer gleich 1 sein.'));
 
     parse(p, varargin{:});
