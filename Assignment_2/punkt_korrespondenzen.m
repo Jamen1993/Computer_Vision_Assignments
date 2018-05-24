@@ -34,5 +34,29 @@ function Korrespondenzen = punkt_korrespondenzen(I1, I2, Mpt1, Mpt2, varargin)
     Im1 = double(I1);
     Im2 = double(I2);
 
-    Korrespondenzen = {window_length, min_corr, do_plot, Im1, Im2};
+    %% Merkmalsvorbereitung
+    % Für die Berechnung der NCC werden Fenster um die Merkmalspunkte gelegt. Punkte die näher als die halbe Breite des Fensters am Rand des Bildes liegen können nicht richtig gefenstert werden, da das Fenster über den Bildrand hinausstehen würde, wo keine gültigen Pixel existieren. Davon betroffene Merkmalspunkte werden daher entfernt.
+
+    % Breite des Rands
+    r = floor(window_length / 2);
+    % Größe des Bilds
+    % Da die Merkmalspunkte in der Form [x; y] übergeben werden, muss ich die Größe des Bilds aus der Darstellung [y, x] in die Form [x; y] umwandeln.
+    s = flip(size(Im1))';
+
+    % Merkmalspunkte, die die oben genannte Bedingung verletzen, entfernen
+    function [Mpt, no_pts] = remove_outer_Mpts(Mpt)
+        % Zuerst erstelle ich eine Matrix, die für jeden Merkmalspunkt zeigt, welcher der beiden Pixelindizes die oben genannte Bedingung verletzt.
+        condition = Mpt <= r | Mpt >= s - r + 1;
+        % Dann fasse ich die beiden Zeilenvektoren zusammen, denn ein Merkmalspunkt wird dann entfernt, wenn x ODER y die Bedingung verletzen
+        mask = condition(1, :) | condition(2, :);
+        % Merkmalspunkte, die die oben genannte Bedingung verletzen, entfernen
+        Mpt(:, mask) = [];
+        % Anzahl der verbliebenen Merkmalspunkte bestimmen
+        no_pts = length(Mpt);
+    end
+
+    [Mpt1, no_pts1] = remove_outer_Mpts(Mpt1);
+    [Mpt2, no_pts2] = remove_outer_Mpts(Mpt2);
+
+    Korrespondenzen = {no_pts1, no_pts2, Mpt1, Mpt2};
 end
