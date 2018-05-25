@@ -61,6 +61,8 @@ function Korrespondenzen = punkt_korrespondenzen(I1, I2, Mpt1, Mpt2, varargin)
     %% Normierung
     % An dieser Stelle wird die oben erwähnte Fensterung durchgeführt. Damit die NCC richtig auf den Bildausschnitt angewandt werden kann, müssen alle Bildausschnitte bezüglich Helligkeit und Kontrast normalisiert werden. Nur so ist ein Vergleich überhaupt möglich.
 
+    % Anzahl der Pixel in einem Fenster
+    N = window_length ^ 2;
     % Indexverschiebung für Fensterung -> diese Elemente müssen, ausgehend vom Merkmal in der Mitte des Fensters, entnommen werden.
     iw = -r:r;
 
@@ -68,7 +70,7 @@ function Korrespondenzen = punkt_korrespondenzen(I1, I2, Mpt1, Mpt2, varargin)
         % Merkmalspunkte fenstern, Fenster normalisieren, vektorisieren und spaltenweise als Matrix angeordnet zurückgeben
 
         % In dieser Matrix werden die vektorisierten, normalisierten Fenster pro Merkmalspunkt spaltenweise gespeichert.
-        Mat_feat = zeros(window_length ^ 2, length(Mpt));
+        Mat_feat = zeros(N, length(Mpt));
 
         % for each Merkmalspunkt
         for it = 1:length(Mpt)
@@ -89,5 +91,18 @@ function Korrespondenzen = punkt_korrespondenzen(I1, I2, Mpt1, Mpt2, varargin)
     Mat_feat_1 = normalised_feature_matrix(Im1, Mpt1);
     Mat_feat_2 = normalised_feature_matrix(Im2, Mpt2);
 
-    Korrespondenzen = {Mat_feat_1, Mat_feat_2};
+    %% Berechnung der NCC
+    % Jetzt wird die NCC der verschiedenen Bildausschnitte untereinander berechnet. Diese Metrik zeigt, wie sehr sich zwei Bildausschnitte ähneln. Der Wertebereich ist -1 .. 1 wobei die Bedeutung der Werte dieselbe ist wie bei der Auto- oder Kreuzkorrelation.
+
+    % Berechnung der Korrelationsmatrix mit erwartungstreuer Normierung (N - 1); die Matrix mit den Indizes m, n zeigt, wie stark das m-te Merkmal aus Bild 1 mit dem n-ten Merkmal aus Bild 2 korreliert.
+    NCC_matrix = (Mat_feat_2' * Mat_feat_1) / (N - 1);
+    % Als nächstes sollen die Punktpaare entsprechend ihrer Korrelation absteigend sortiert werden. Dafür erstelle ich zuerst eine Tabelle, die die vektorisierte NCC-Matrix und die zugehörigen linearen Indizes der Elemente enthält.
+    S = [NCC_matrix(:), (1:numel(NCC_matrix))'];
+    % Nur Punkte mit hoher NCC sind Kandidaten für Korrespondierende Punkte, daher werden alle Einträge mit geringer Korrelation entsprechend Schwellwert eliminiert.
+    S(S(:, 1) < min_corr, :) = [];
+    NCC_matrix(NCC_matrix < min_corr) = 0;
+    % Einträge entsprechend Korrelation sortieren
+    S = sortrows(S, 1, 'descend');
+
+    Korrespondenzen = {NCC_matrix, S(:, 2)};
 end
