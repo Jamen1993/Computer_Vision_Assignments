@@ -43,20 +43,51 @@ function Korrespondenzen = punkt_korrespondenzen(I1, I2, Mpt1, Mpt2, varargin)
     % Da die Merkmalspunkte in der Form [x; y] übergeben werden, muss ich die Größe des Bilds aus der Darstellung [y, x] in die Form [x; y] umwandeln.
     s = flip(size(Im1))';
 
-    % Merkmalspunkte, die die oben genannte Bedingung verletzen, entfernen
-    function [Mpt, no_pts] = remove_outer_Mpts(Mpt)
+    function Mpt = remove_outer_Mpts(Mpt)
+        % Merkmalspunkte, die die oben genannte Bedingung verletzen, entfernen
+
         % Zuerst erstelle ich eine Matrix, die für jeden Merkmalspunkt zeigt, welcher der beiden Pixelindizes die oben genannte Bedingung verletzt.
         condition = Mpt <= r | Mpt >= s - r + 1;
         % Dann fasse ich die beiden Zeilenvektoren zusammen, denn ein Merkmalspunkt wird dann entfernt, wenn x ODER y die Bedingung verletzen
         mask = condition(1, :) | condition(2, :);
         % Merkmalspunkte, die die oben genannte Bedingung verletzen, entfernen
         Mpt(:, mask) = [];
-        % Anzahl der verbliebenen Merkmalspunkte bestimmen
-        no_pts = length(Mpt);
     end
 
-    [Mpt1, no_pts1] = remove_outer_Mpts(Mpt1);
-    [Mpt2, no_pts2] = remove_outer_Mpts(Mpt2);
+    % Funktion auf Merkmalspunkte aus beiden Bildern anwenden
+    Mpt1 = remove_outer_Mpts(Mpt1);
+    Mpt2 = remove_outer_Mpts(Mpt2);
 
-    Korrespondenzen = {no_pts1, no_pts2, Mpt1, Mpt2};
+    %% Normierung
+    % An dieser Stelle wird die oben erwähnte Fensterung durchgeführt. Damit die NCC richtig auf den Bildausschnitt angewandt werden kann, müssen alle Bildausschnitte bezüglich Helligkeit und Kontrast normalisiert werden. Nur so ist ein Vergleich überhaupt möglich.
+
+    % Indexverschiebung für Fensterung -> diese Elemente müssen, ausgehend vom Merkmal in der Mitte des Fensters, entnommen werden.
+    iw = -r:r;
+
+    function Mat_feat = normalised_feature_matrix(Im, Mpt)
+        % Merkmalspunkte fenstern, Fenster normalisieren, vektorisieren und spaltenweise als Matrix angeordnet zurückgeben
+
+        % In dieser Matrix werden die vektorisierten, normalisierten Fenster pro Merkmalspunkt spaltenweise gespeichert.
+        Mat_feat = zeros(window_length ^ 2, length(Mpt));
+
+        % for each Merkmalspunkt
+        for it = 1:length(Mpt)
+            % Indizes für Fensterung berechnen
+            ix = iw + Mpt(1, it);
+            iy = iw + Mpt(2, it);
+            % Fenster um Merkmalspunkt holen und für einfachere Verarbeitung vektorisieren
+            w = Im(iy, ix);
+            w = w(:);
+            % Fenster mit Mittelwert und Standardabweichung entsprechend Kontrast und Helligkeit normalisieren
+            wn = (w - mean(w)) ./ std(w);
+            % In Ergebnismatrix ablegen
+            Mat_feat(:, it) = wn;
+        end
+    end
+
+    % Funktion auf Merkmalspunkte aus beiden Bildern anwenden
+    Mat_feat_1 = normalised_feature_matrix(Im1, Mpt1);
+    Mat_feat_2 = normalised_feature_matrix(Im2, Mpt2);
+
+    Korrespondenzen = {Mat_feat_1, Mat_feat_2};
 end
