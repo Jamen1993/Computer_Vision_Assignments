@@ -100,9 +100,37 @@ function Korrespondenzen = punkt_korrespondenzen(I1, I2, Mpt1, Mpt2, varargin)
     S = [NCC_matrix(:), (1:numel(NCC_matrix))'];
     % Nur Punkte mit hoher NCC sind Kandidaten für Korrespondierende Punkte, daher werden alle Einträge mit geringer Korrelation entsprechend Schwellwert eliminiert.
     S(S(:, 1) < min_corr, :) = [];
-    NCC_matrix(NCC_matrix < min_corr) = 0;
     % Einträge entsprechend Korrelation sortieren
     S = sortrows(S, 1, 'descend');
 
-    Korrespondenzen = {NCC_matrix, S(:, 2)};
+    %% Korrespondenz
+    % Nachdem Punkte Merkmalspunkte mit hoher Korrelation gefunden wurden, können diese zu korrespondierenden Paaren zusammengestellt werden. Wichtig ist dabei, dass jeder Merkmalspunkt nur in einem Paar enthalten sein und nicht gleichzeitig mit zwei Merkmalspunkten aus dem anderen Bild korrespondieren kann.
+
+    % In dieser Matrix werden die korrespondierenden Paare in der Form [x1; y1; x2; y2] spaltenweise abgelegt.
+    Korrespondenzen = zeros(4, length(S));
+    % Hashmaps für genutzte Merkmalspunkte pro Bild
+    M1 = containers.Map('KeyType', 'double', 'ValueType', 'logical');
+    M2 = containers.Map('KeyType', 'double', 'ValueType', 'logical');
+    % Iterator für eingetragene korrespondierende Punkte
+    it_found = 1;
+
+    % for each in S
+    for it_S = 1:length(S)
+        % Matrixindex aus Vektorindex rekonstruieren
+        [i2, i1] = ind2sub(size(NCC_matrix), S(it_S, 2));
+        % Prüfen, ob einer der beiden Merkmalspunkte schon für ein paar verwendet wurde
+        if isKey(M1, i1) || isKey(M2, i2)
+            % Falls ja, überspringen
+            continue;
+        end
+        % Paar als korrespondierend eintragen
+        Korrespondenzen(:, it_found) = [Mpt1(:, i1); Mpt2(:, i2)];
+        it_found = it_found + 1;
+        % Punkte als verwendet eintragen
+        M1(i1) = true;
+        M2(i2) = true;
+    end
+
+    % Nicht gefüllte Spalten entfernen
+    Korrespondenzen(:, it_found:end) = [];
 end
