@@ -151,6 +151,6 @@ function Korrespondenzen = punkt_korrespondenzen(I1, I2, Mpt1, Mpt2, varargin)
         hold off;
         % Beschriftung
         title('Korrespondierende Merkmale')
-        legend('Merkmale aus Bild 1', 'Merkmale aus Bild 2', 'Korrespondenzen');
+        legend('Merkmale aus Bild 1', 'Merkmale aus Bild 2', 'Korrespondenzen', 'location', 'southwest');
     end
 end
