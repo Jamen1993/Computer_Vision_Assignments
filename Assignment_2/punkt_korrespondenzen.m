@@ -133,4 +133,24 @@ function Korrespondenzen = punkt_korrespondenzen(I1, I2, Mpt1, Mpt2, varargin)
 
     % Nicht gefüllte Spalten entfernen
     Korrespondenzen(:, it_found:end) = [];
+
+    %% Zeige die Paare von korrespondierenden Punkten gemeinsam an
+    if do_plot
+        figure('name', 'Korrespondierende Merkmale');
+        % Beide Graustufenbilder mit 50 % Alpha übereinanderlegen
+        h_I1 = imshow(I1);
+        h_I1.AlphaData = 0.5;
+        hold on;
+        h_I2 = imshow(I2);
+        h_I2.AlphaData = 0.5;
+        % Korrespondierende Punkte markieren
+        plot(Korrespondenzen(1, :), Korrespondenzen(2, :), 'ob');
+        plot(Korrespondenzen(3, :), Korrespondenzen(4, :), 'or');
+        % Korrespondierende Punkte mit Linien verbinden
+        plot(Korrespondenzen([1, 3], :), Korrespondenzen([2, 4], :), 'g');
+        hold off;
+        % Beschriftung
+        title('Korrespondierende Merkmale')
+        legend('Merkmale aus Bild 1', 'Merkmale aus Bild 2', 'Korrespondenzen');
+    end
 end
