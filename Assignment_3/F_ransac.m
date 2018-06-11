@@ -31,5 +31,17 @@ function [Korrespondenzen_robust] = F_ransac(Korrespondenzen, varargin)
     x1_pixel = fh(Korrespondenzen(1:2, :));
     x2_pixel = fh(Korrespondenzen(3:4, :));
 
-    Korrespondenzen_robust = {epsilon, p, tolerance, x1_pixel, x2_pixel};
+    %% RanSaC Algorithmus Vorbereitung
+    % Anzahl der Punktpaare, die gefunden werden sollen
+    k = 8;
+    % Iterationszahl
+    s = log(1 - p) / log(1 - (1 - epsilon) ^ k);
+    % Anzahl der Korresponzenzen im größten bisher gefundenen Consensus-Set (largest_set)
+    largest_set_size = 0;
+    % Sampson-Distanz von largest_set
+    largest_set_dist = Inf;
+    % Fundamentalmatrix mit der das largest_set gefunden wurde
+    largest_set_F = zeros(3);
+
+    Korrespondenzen_robust = {k, s, largest_set_size, largest_set_dist, largest_set_F};
 end
