@@ -9,17 +9,21 @@ function EF = achtpunktalgorithmus(Korrespondenzen, K)
         K_given = true;
     end
 
-    % Punkte aus Korrespondenzpunktpaaren extrahieren und in homogene Koordinaten umwandeln
-    x1 = Korrespondenzen(1:2, :);
-    x1 = [x1; ones(1, length(x1))];
-    x2 = Korrespondenzen(3:4, :);
-    x2 = [x2; ones(1, length(x2))];
+    %% Vorbereitung
+    function x = punkte_vorbereiten(x)
+        % Bildkoordinaten in homogene Darstellung umwandeln und bei gegebenen Kameraparametern (Matrix K = Ks * Kf) justieren
 
-    % Punkte kalibrieren
-    if K_given
-        x1 = K \ x1;
-        x2 = K \ x2;
+        % Bildkoordinaten in homogene Darstellung umwandeln
+        x = [x; ones(1, length(x))];
+        % Bildkoordinaten mit Kameraparametern justieren, falls diese gegeben sind.
+        if K_given
+            x = K \ x;
+        end
     end
+
+    % Punkte für Schätzung der Essentiellen oder Fudamentalmatrix vorbereiten
+    x1 = punkte_vorbereiten(Korrespondenzen(1:2, :));
+    x2 = punkte_vorbereiten(Korrespondenzen(3:4, :));
 
     % Koeffizientenmatrix für vektorisierte Epipolargleichung berechnen
     A = zeros(length(Korrespondenzen), 9);
@@ -28,7 +32,7 @@ function EF = achtpunktalgorithmus(Korrespondenzen, K)
         A(it, :) = kron(x1(:, it), x2(:, it));
     end
 
-    [U, S, V] = svd(A);
+    [~, ~, V] = svd(A);
 
     EF = {x1, x2, A, V};
 end
