@@ -19,11 +19,14 @@ Merkmale2 = harris_detektor(IGray2, 'segment_length', 9, 'k', 0.05, 'min_dist', 
 %% Korrespondenzschätzung
 Korrespondenzen = punkt_korrespondenzen(IGray1,IGray2,Merkmale1,Merkmale2,'window_length',25,'min_corr',0.9,'do_plot',false);
 
+Korrespondenzen_robust = F_ransac(Korrespondenzen)
+
 %% Fundamentalmatrix
-F = achtpunktalgorithmus(Korrespondenzen)
+% F = achtpunktalgorithmus(Korrespondenzen_robust);
 
 %% Essentielle Matrix
 K = 1e3 * [8.2853,      0, 1.5412;...
                 0, 8.3024, 1.4397;...
                 0,      0, 0.0010];
-E = achtpunktalgorithmus(Korrespondenzen, K)
+
+% E = achtpunktalgorithmus(Korrespondenzen_robust, K);
