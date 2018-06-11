@@ -23,5 +23,7 @@ Korrespondenzen = punkt_korrespondenzen(IGray1,IGray2,Merkmale1,Merkmale2,'windo
 F = achtpunktalgorithmus(Korrespondenzen)
 
 %% Essentielle Matrix
-% load('K.mat');
-% E = achtpunktalgorithmus(Korrespondenzen, K);
+K = 1e3 * [8.2853,      0, 1.5412;...
+                0, 8.3024, 1.4397;...
+                0,      0, 0.0010];
+E = achtpunktalgorithmus(Korrespondenzen, K)
