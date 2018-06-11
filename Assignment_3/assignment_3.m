@@ -20,7 +20,7 @@ Merkmale2 = harris_detektor(IGray2, 'segment_length', 9, 'k', 0.05, 'min_dist', 
 Korrespondenzen = punkt_korrespondenzen(IGray1,IGray2,Merkmale1,Merkmale2,'window_length',25,'min_corr',0.9,'do_plot',false);
 
 %% Fundamentalmatrix
-F = achtpunktalgorithmus(Korrespondenzen);
+F = achtpunktalgorithmus(Korrespondenzen)
 
 %% Essentielle Matrix
 % load('K.mat');
