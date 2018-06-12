@@ -12,18 +12,18 @@ function [Korrespondenzen_robust] = F_ransac(Korrespondenzen, varargin)
     assert(nargin <= 7, 'Zu viele Parameter');
 
     % Parameter entsprechend Beschreibung parsen, prüfen und Standardwerte setzen
-    p = inputParser;
+    ip = inputParser;
 
-    addParameter(p, 'epsilon', 0.5, @(x) assert(isnumeric(x) && 0 < x && x < 1, 'epsilon muss eine reelle Zahl im Intervall (0, 1) sein'));
-    addParameter(p, 'p', 0.5, @(x) assert(isnumeric(x) && 0 < x && x < 1, 'p muss eine Reelle Zahl im Intervall (0, 1) sein'));
-    addParameter(p, 'tolerance', 0.01, @(x) assert(isnumeric(x) && 0 < x, 'tolerance muss eine reelle Zahl größer 0 sein'));
+    addParameter(ip, 'epsilon', 0.5, @(x) assert(isnumeric(x) && 0 < x && x < 1, 'epsilon muss eine reelle Zahl im Intervall (0, 1) sein'));
+    addParameter(ip, 'p', 0.5, @(x) assert(isnumeric(x) && 0 < x && x < 1, 'p muss eine Reelle Zahl im Intervall (0, 1) sein'));
+    addParameter(ip, 'tolerance', 0.01, @(x) assert(isnumeric(x) && 0 < x, 'tolerance muss eine reelle Zahl größer 0 sein'));
 
-    parse(p, varargin{:});
+    parse(ip, varargin{:});
 
     % Parameter umbennenen für einfachere Nutzung
-    epsilon = p.Results.epsilon;
-    tolerance = p.Results.tolerance;
-    p = p.Results.p;
+    epsilon = ip.Results.epsilon;
+    tolerance = ip.Results.tolerance;
+    p = ip.Results.p;
 
     % Pixelkoordinaten aus Korrespondenzen extrahieren und in homogene Darstellung umwandeln
     fh = @(x) [x; ones(1, length(x))];
@@ -40,8 +40,32 @@ function [Korrespondenzen_robust] = F_ransac(Korrespondenzen, varargin)
     largest_set_size = 0;
     % Sampson-Distanz von largest_set
     largest_set_dist = Inf;
-    % Fundamentalmatrix mit der das largest_set gefunden wurde
+    % Fundamentalmatrix für die das largest_set gefunden wurde
     largest_set_F = zeros(3);
+    % Indizes des größten Konsensus-Sets
+    largest_set = [];
 
-    Korrespondenzen_robust = {k, s, largest_set_size, largest_set_dist, largest_set_F};
+    %% RanSaC Algorithmus Durchführung
+    for it = 1:s
+        % 1. Fundamentalmatrix mit Achtpunktalgorithmus und k zufällig ausgesuchten Korrespondenzpunktpaaren schätzen
+        ind_rand = randperm(length(Korrespondenzen), k);
+        F = achtpunktalgorithmus(Korrespondenzen(:, ind_rand));
+        % 2. Sampson-Distanz für alle Korrespondenzpunktpaare bezogen auf die geschätzte Fundamentalmatrix berechnen
+        sd = sampson_dist(F, x1_pixel, x2_pixel);
+        % 3. Geeignete Korrespondenzpunktpaare entsprechend tolerance auswählen und ins aktuelle Consensus-Set aufnehmen
+        % Ich arbeite hier nur mit den Indizes, damit ich nicht dauernd große Arrays kopieren muss
+        consensus_set = find(sd < tolerance);
+        % 4. Für das Consensus-Set die Anzahl der Paare und die absolute Set-Distanz als Summe über die Sampson-Distanzen des Sets ermitteln.
+        set_size = length(consensus_set);
+        set_dist = sum(sd(consensus_set));
+        % 5. & 6. Das Consensus-Set mit dem größten (bezüglich Anzahl der Paare) bisher gefundenen vergleichen: Ist das aktuelle größer, wird dieses übernommen; sind beide gleich groß, wird das mit der kleineren absoluten Set-Distanz übernommen; ansonsten ändert sich nichts.
+        if set_size > largest_set_size || set_size == largest_set_size && set_dist < largest_set_dist
+            largest_set = consensus_set;
+            largest_set_size = set_size;
+            largest_set_dist = set_dist;
+            largest_set_F = F;
+        end
+    end
+    % Korrespondenzpunktpaare des besten Consensus-Sets auswählen
+    Korrespondenzen_robust = {Korrespondenzen(:, largest_set), largest_set_F};
 end

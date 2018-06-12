@@ -7,7 +7,7 @@ function sd = sampson_dist(F, x1_pixel, x2_pixel)
     % sd - Wenn x1_pixel und x2_pixel einspaltig sind, ist sd die Sampson-Distanz dieses Paars. Sind sie hingegen mehrspaltig, enthält sd spaltenweise die Sampson-Distanz des jeweiligen Paars mit dem selben Spaltenindex in x1_pixel und x2_pixel.
 
 
-    assert(size(x1_pixel) == size(x2_pixel), 'x1_pixel und x2_pixel müssen die gleiche Dimension haben');
+    assert(length(x1_pixel) == length(x2_pixel), 'x1_pixel und x2_pixel müssen die gleiche Dimension haben');
 
     %% Berechnung der Sampson-Distanz entsprechend Angabe
     % Kreuzproduktmatrix zum dritten Einheitsvektor e3 = [0, 0, 1]
