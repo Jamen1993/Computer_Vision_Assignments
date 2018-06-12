@@ -9,10 +9,12 @@ function Korrespondenzen = punkt_korrespondenzen(I1, I2, Mpt1, Mpt2, varargin)
     % Mpt2 - Pixelkoordinaten [x; y] der Merkmalspunkte in I2
     %
     % 'window_length' - (numerisch, ungerade, > 1) Seitenlänge des quadratischen Fensters um die Merkmalspunkte, die untereinander verglichen werden (Standardwert = 25)
-    % 'min_corr' - (numerisch, (0; 1)) Unterer Schwellwert für die Stärke der Korrelation zweier Merkmale (Standardwert = 0.95)
+    % 'min_corr' - (numerisch, (0; 1) ) Unterer Schwellwert für die Stärke der Korrelation zweier Merkmale (Standardwert = 0.95)
     % 'do_plot' - (logical) bestimmt, ob das Bild angezeigt wird oder nicht (Standardwert = false)
+    %
+    % Korrespondenzen - Matrix in der spaltenweise die Pixelkoordinaten von Korrespondenzpunktpaaren in der Form [x1; y1; x2; y2] abgelegt sind
 
-    %% Input parser
+    %% Input Parser
     % I1, I2, Mpt1, Mpt2 + 3 name value pairs = 10 Parameter
     assert(nargin <= 10, 'Zu viele Parameter');
 
