@@ -40,8 +40,6 @@ function [Korrespondenzen_robust] = F_ransac(Korrespondenzen, varargin)
     largest_set_size = 0;
     % Sampson-Distanz von largest_set
     largest_set_dist = Inf;
-    % Fundamentalmatrix für die das largest_set gefunden wurde
-    largest_set_F = zeros(3);
     % Indizes des größten Konsensus-Sets
     largest_set = [];
 
@@ -63,9 +61,8 @@ function [Korrespondenzen_robust] = F_ransac(Korrespondenzen, varargin)
             largest_set = consensus_set;
             largest_set_size = set_size;
             largest_set_dist = set_dist;
-            largest_set_F = F;
         end
     end
     % Korrespondenzpunktpaare des besten Consensus-Sets auswählen
-    Korrespondenzen_robust = {Korrespondenzen(:, largest_set), largest_set_F};
+    Korrespondenzen_robust = Korrespondenzen(:, largest_set);
 end
