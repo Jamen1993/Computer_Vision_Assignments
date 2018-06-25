@@ -1,4 +1,4 @@
-function [T1, R1, T2, R2, U, V] = TR_aus_E(E)
+function [T1, R1, T2, R2] = TR_aus_E(E)
     % Diese Funktion berechnet die möglichen Werte für T und R aus der Essenziellen Matrix.
     %
     % E - Essenzielle Matrix für eine Szene
