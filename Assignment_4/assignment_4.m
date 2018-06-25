@@ -14,5 +14,5 @@ load Korrespondenzen_robust;
 %% Assignment 4
 % Essenzielle Matrix der Szene mit Achtpunktalgorithmus schätzen
 E = achtpunktalgorithmus(Korrespondenzen_robust, K);
-%
+% T und R aus E rekonstruieren
 [T1, R1, T2, R2, ~, ~] = TR_aus_E(E)
