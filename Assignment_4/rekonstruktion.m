@@ -8,7 +8,7 @@ function [T, R, lambda, M1, M2] = rekonstruktion(T1, T2, R1, R2, Korrespondenzen
     %
     % T - Translationsvektor für den die Lösung mit den meisten positiven Tiefeninformationen gefunden wurde
     % R - Rotationsmatrix für die die Lösung mit den meisten positiven Tiefeninformationen gefunden wurde
-    % lambda - Tiefe der Korrespondenzpunktpaare für die beste gefundene Kombination aus T und R
+    % lambda - Tiefe der Korrespondenzpunktpaare für die beste gefundene Kombination aus T und R. In der linken Spalte stehen die Tiefen für das erste Kamerakoordinatensystem und in der zweiten analog die für das zweite.
     % Mx - LGS-Matritzen für die Berechnung der Tiefeninformationen in beiden Kamerakoordinatensystemen
 
     %% Vorbereitung
@@ -18,13 +18,10 @@ function [T, R, lambda, M1, M2] = rekonstruktion(T1, T2, R1, R2, Korrespondenzen
     % Korrespondenzpunkte aus Korrespondenzen extrahieren, in homogene Pixelkoordinaten umwandeln und justieren
     x1 = to_cal_hom(Korrespondenzen(1:2, :), K);
     x2 = to_cal_hom(Korrespondenzen(3:4, :), K);
-    % Cellarray für Tiefeninformationen für jede Kombination von Ts und Rs initialisieren
-    fh = @() zeros(length(Korrespondenzen), 2);
-    d_cell = {fh(), fh(), fh(), fh()};
 
     %% Rekonstruktion der Tiefeninformationen mit Algorithmus aus der Vorlesung
     %
-    % Ich habe mich dazu entschieden die Konstruktion der LGS-Matritzen nicht über eine Schleife, sonder soviel wie möglich durch Funktionen aus der linearen Algebra zu lösen. Ob das performancemäßig sinnvoll ist, ist mir noch nicht klar, aber es war eine interessante Herausforderung.
+    % Ich habe mich dazu entschieden die Konstruktion der LGS-Matritzen nicht über eine Schleife, sondern soviel wie möglich durch Funktionen aus der linearen Algebra zu lösen. Ob das performancemäßig sinnvoll ist, ist mir noch nicht klar, aber es war eine interessante Herausforderung.
     %
     % Kreuzproduktmatritzen für Korrespondenzpunkte konstruieren
     W1 = make_cross_matrix(x1);
@@ -41,13 +38,12 @@ function [T, R, lambda, M1, M2] = rekonstruktion(T1, T2, R1, R2, Korrespondenzen
     lambda = [];
     % for each Kombination von T und R
     for it_combination = 1:4
-        % LGS-Matritzen für die Berechnung der Tiefeninformationen aufstellen
-        %
-        % Große diagonal angeordnete Rotationsmatrix konstruieren
+        % Große, diagonal angeordnete Rotationsmatrix konstruieren
         Rm = kron(eye(length(Korrespondenzen)), R_cell{it_combination});
-        % T sooft übereinanderstapeln, dass ich ihn mit der passenden dimension rechts an den diagonalen Teil von M ansetzen kann.
+        % T sooft übereinanderstapeln, dass ich ihn mit der passenden Dimension rechts an den diagonalen Teil von M ansetzen kann.
         Tm = repmat(T_cell{it_combination}, length(Korrespondenzen), 1);
         % LGS-Matritzen entsprechend Beschreibung aufstellen
+        %
         % Diagonalen Teil von M1 und M2 konstruieren
         Diag1 = W2 * Rm  * Dx1;
         Diag2 = W1 * Rm' * Dx2;
@@ -57,7 +53,7 @@ function [T, R, lambda, M1, M2] = rekonstruktion(T1, T2, R1, R2, Korrespondenzen
         % M1 und M2 aus ihren Bestandteilen zusammensetzen
         M1 = [Diag1, Rhs1];
         M2 = [Diag2, Rhs2];
-        % Lösung der LGS durch Lösung des Optimierungsproblems argmin(||M * d||²) über d mithilfe der Singulärwertzerlegung
+        % Lösung der homogenen LGS durch Lösung des Optimierungsproblems argmin(||M * d||²) über d mithilfe der Singulärwertzerlegung
         [~, ~, V1] = svd(M1);
         [~, ~, V2] = svd(M2);
         % Extraktion der Lösungsvektoren d = [λ1, λ2, ..., γ]
@@ -68,16 +64,16 @@ function [T, R, lambda, M1, M2] = rekonstruktion(T1, T2, R1, R2, Korrespondenzen
         d2 = d2 / d2(end);
         % Lösungsvektoren so zusammenfassen, dass zeilenweise die Tiefenwerte eines Korrespondenspunkts für beide Kamerakoordinatensysteme stehen
         current_lambdas = [d1(1:end-1), d2(1:end-1)];
-        % Hat der gefundene Lösungsvektor mehr positive Tiefenwerte als der bisher beste?
-        current_nnz = nnz(current_lambdas > 0);
-        if current_nnz > positive_in_best_combination
+        % Hat der gefundene Lösungsvektor mehr positive Tiefenwerte als der bisher Beste?
+        positive_in_current = nnz(current_lambdas > 0);
+        if positive_in_current > positive_in_best_combination
             % Dann haben wir eine neue beste Kombination gefunden
             lambda = current_lambdas;
             i_best_combination = it_combination;
-            positive_in_best_combination = current_nnz;
+            positive_in_best_combination = positive_in_current;
         end
     end
-
+    % T und R der besten Kombination zurückgeben
     T = T_cell{i_best_combination};
     R = R_cell{i_best_combination};
 end
