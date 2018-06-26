@@ -17,12 +17,7 @@ E = achtpunktalgorithmus(Korrespondenzen_robust, K);
 % T und R aus E rekonstruieren
 [T1, R1, T2, R2] = TR_aus_E(E);
 % Rekonstruktion der Tiefeninformationen
-[T, R, lambda, M1, M2] = rekonstruktion(T1, T2, R1, R2, Korrespondenzen_robust, K);
-
-s_lambda = size(lambda)
-s_M1 = size(M1)
-s_M2 = size(M2)
-
-% Zeige euklidische Transformation
-R
-T
+[T, R, lambda, P1, camC1, camC2] = rekonstruktion(T1, T2, R1, R2, Korrespondenzen_robust, K);
+% Gleiche skalierung von X- und Y-Achse
+h = get(gca,'DataAspectRatio');
+set(gca,'DataAspectRatio',[1 1 h(3)]);

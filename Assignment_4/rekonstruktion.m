@@ -1,4 +1,4 @@
-function [T, R, lambda, M1, M2] = rekonstruktion(T1, T2, R1, R2, Korrespondenzen, K)
+function [T, R, lambda, P1, camC1, camC2] = rekonstruktion(T1, T2, R1, R2, Korrespondenzen, K)
     % Rekonstruktion der Tiefeninformationen aus den Korrespondenzpunkpaaren.
     %
     % Tx - Lösungen für Translation
@@ -9,7 +9,9 @@ function [T, R, lambda, M1, M2] = rekonstruktion(T1, T2, R1, R2, Korrespondenzen
     % T - Translationsvektor für den die Lösung mit den meisten positiven Tiefeninformationen gefunden wurde
     % R - Rotationsmatrix für die die Lösung mit den meisten positiven Tiefeninformationen gefunden wurde
     % lambda - Tiefe der Korrespondenzpunktpaare für die beste gefundene Kombination aus T und R. In der linken Spalte stehen die Tiefen für das erste Kamerakoordinatensystem und in der zweiten analog die für das zweite.
-    % Mx - LGS-Matritzen für die Berechnung der Tiefeninformationen in beiden Kamerakoordinatensystemen
+    % P1 - Korrespondenzpunkte in Raumkoordinaten bezogen auf das Kamerakoordinatensystem der ersten Kamera
+    % camC1 - Ecken der Bildebene für Kamera 1
+    % camC2 - Ecken der Bildebene für Kamera 2
 
     %% Vorbereitung
     % Cellarrays für T und R erstellen, die bei Iteration über den Index alle Kombinationen von T und R bilden.
@@ -73,9 +75,50 @@ function [T, R, lambda, M1, M2] = rekonstruktion(T1, T2, R1, R2, Korrespondenzen
             positive_in_best_combination = positive_in_current;
         end
     end
-    % T und R der besten Kombination zurückgeben
+
+    %% Darstellung
+    %
+    % Raumkoordinaten der Korrespondenzpunkte bezogen auf Kamerakoordinatensystem 1 berechnen
+    P1 = repmat(lambda(:, 1)', 3, 1) .* x1;
+    % Raumkoordinaten plotten
+    figure('name', 'Raumkoordinaten');
+    fh = @(row) P1(row, :);
+    scatter3(fh(1), fh(2), fh(3));
+    campos([43, -22, -87]);
+    camup([0, -1, 0]);
+    hold on;
+    grid on;
+    xlabel('X');
+    ylabel('Y');
+    zlabel('Z');
+    % und beschriften
+    text(fh(1), fh(2), fh(3), string(1:length(P1)));
+    % Ecken der Bildebene der ersten Kamera
+    camC1 = [-0.2 0.2  0.2 -0.2
+    0.2 0.2 -0.2 -0.2
+    1     1    1    1];
+    % In homogene Koordinaten umwandeln
+    camC1_hom = [camC1; ones(1, 4)];
+    % Euklidische Bewegung vom ersten zum zweiten Kamerakoordinatensystem
     T = T_cell{i_best_combination};
     R = R_cell{i_best_combination};
+    M = [     R      T
+         zeros(1, 3) 1];
+    % @TODO
+    % Mir war an dieser Stelle leider nicht ganz klar, warum ich hier die inverse Transformation nutzen muss. Ich hatte erwartet, dass ich die Bewegung von camC1 nach camC2 in der Form camC2 = M * camC1 gegeben hätte. Warum ist das nicht so?
+    camC2_hom = M \ camC1_hom;
+    % In inhomogene Koordinaten umwandeln
+    camC2 = camC2_hom(1:3, :);
+    % Bildebenen zeichnen
+    fh = @(row) [camC1(row, :) camC1(row, 1)];
+    plot3(fh(1), fh(2), fh(3), 'b');
+    fh = @(row) camC1(row, 1);
+    text(fh(1), fh(2), fh(3), 'Cam 1');
+
+    fh = @(row) [camC2(row, :) camC2(row, 1)];
+    plot3(fh(1), fh(2), fh(3), 'r');
+    fh = @(row) camC2(row, 1);
+    text(fh(1), fh(2), fh(3), 'Cam 2');
 end
 
 function x = to_cal_hom(x, K)
