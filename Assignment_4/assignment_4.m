@@ -35,18 +35,26 @@ x2 = to_cal_hom(Korrespondenzen_robust(3:4, :), K);
 fh = @() zeros(length(Korrespondenzen_robust), 2);
 d_cell = {fh(), fh(), fh(), fh()};
 
-% Große Kreuzproduktmatrix konstruieren
-W = make_cross_matrix(x2);
-% Große Rotationsmatrix konstruieren
+% Entsprechend
+% Kreuzproduktmatritzen für Korrespondenzpunkte konstruieren
+W1 = make_cross_matrix(x1);
+W2 = make_cross_matrix(x2);
+% Große diagonal angeordnete Rotationsmatrix konstruieren
 R = kron(eye(length(Korrespondenzen_robust)), R1);
-% Matrix konstruieren bei der x1 spaltenweise diagonal angeordnet ist
-Dx1 = kron(eye(length(x1)), ones(3, 1)) .* x1(:);
+% Matritzen konstruieren bei denen die Korrespondenzpunkte jeweils spaltenweise diagonal angeordnet sind
+fh = @(x) kron(eye(length(x)), ones(3, 1)) .* x(:);
+Dx1 = fh(x1);
+Dx2 = fh(x2);
 
-M = [W * R * Dx1, W * repmat(T1, length(x1), 1)];
+% LGS-Matritzen entsprechend Beschreibung aufstellen
+fh = @(T) repmat(T1, length(x1), 1);
+Diag1 = W2 * R * Dx1;
+Rhs1 = W2 * fh(T1);
+M1 = [Diag1, Rhs1];
 
-% B = [11 12 13
-%      21 22 23
-%      31 32 33];
+Diag2 = W1 * R' * Dx2;
+Rhs2 = -W1 * R' * fh(T1);
+M2 = [Diag2, Rhs2];
 
 function x = to_cal_hom(x, K)
     % Pixelkoordinaten in homogene Darstellung umwandeln und mit Kameraparametern (Matrix K = Ks * Kf) justieren
