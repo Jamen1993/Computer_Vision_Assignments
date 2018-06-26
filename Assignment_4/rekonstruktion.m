@@ -95,8 +95,8 @@ function [T, R, lambda, P1, camC1, camC2] = rekonstruktion(T1, T2, R1, R2, Korre
     text(fh(1), fh(2), fh(3), string(1:length(P1)));
     % Ecken der Bildebene der ersten Kamera
     camC1 = [-0.2 0.2  0.2 -0.2
-    0.2 0.2 -0.2 -0.2
-    1     1    1    1];
+              0.2 0.2 -0.2 -0.2
+                1   1    1    1];
     % In homogene Koordinaten umwandeln
     camC1_hom = [camC1; ones(1, 4)];
     % Euklidische Bewegung vom ersten zum zweiten Kamerakoordinatensystem
