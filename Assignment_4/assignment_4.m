@@ -35,7 +35,7 @@ x2 = to_cal_hom(Korrespondenzen_robust(3:4, :), K);
 fh = @() zeros(length(Korrespondenzen_robust), 2);
 d_cell = {fh(), fh(), fh(), fh()};
 
-% Entsprechend
+%% Tiefeninformationen entsprechend Algorithmus aus der Vorlesung rekonstruieren
 % Kreuzproduktmatritzen für Korrespondenzpunkte konstruieren
 W1 = make_cross_matrix(x1);
 W2 = make_cross_matrix(x2);
@@ -45,7 +45,6 @@ R = kron(eye(length(Korrespondenzen_robust)), R1);
 fh = @(x) kron(eye(length(x)), ones(3, 1)) .* x(:);
 Dx1 = fh(x1);
 Dx2 = fh(x2);
-
 % LGS-Matritzen entsprechend Beschreibung aufstellen
 fh = @(T) repmat(T1, length(x1), 1);
 Diag1 = W2 * R * Dx1;
@@ -55,6 +54,17 @@ M1 = [Diag1, Rhs1];
 Diag2 = W1 * R' * Dx2;
 Rhs2 = -W1 * R' * fh(T1);
 M2 = [Diag2, Rhs2];
+% Lösung der LGS durch Lösung des Optimierungsproblems argmin(||M * d||²) über d mithilfe der Singulärwertzerlegung
+[~, ~, V1] = svd(M1);
+[~, ~, V2] = svd(M2);
+% Extraktion der Lösungsvektoren d = [λ1, λ2, ..., γ]
+d1 = V1(:, end);
+d2 = V2(:, end);
+% Lösungsvektoren so normieren, dass γ = 1
+d1 = d1 / d1(end);
+d2 = d2 / d2(end);
+% Lösungsvektoren unter Vernachlässigung von γ in d_cell kopieren
+d_cell{1} = [d1(1:end-1), d2(1:end-1)];
 
 function x = to_cal_hom(x, K)
     % Pixelkoordinaten in homogene Darstellung umwandeln und mit Kameraparametern (Matrix K = Ks * Kf) justieren
