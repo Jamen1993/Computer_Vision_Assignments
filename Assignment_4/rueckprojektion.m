@@ -48,6 +48,4 @@ function [repro_error, x2_repro] = rueckprojektion(Korrespondenzen, P1, Image2, 
     % Verbindungslinien zwischen Original und Rückprojektion
     plot([get_x2_ref_row(1); get_x2_repro_row(1)], [get_x2_ref_row(2); get_x2_repro_row(2)], 'g');
     legend('Original Korrespondenzpunkt', 'Rueckprojektion', 'Paar');
-    % Dummy text um Assesment zu befriedigen (ich zeige die Paare mit Linien an, das finde ich intuitiver)
-    text();
 end
