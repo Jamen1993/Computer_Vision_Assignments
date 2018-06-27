@@ -26,12 +26,22 @@ function EF = achtpunktalgorithmus(Korrespondenzen, K)
     x2 = punkte_vorbereiten(Korrespondenzen(3:4, :));
 
     % Koeffizientenmatrix für vektorisierte Epipolargleichung berechnen
-    % Ich verwende hier eine Schleife, weil es keine Funktion für die Berechnung eines spaltenweise Kroneckerprodukts gibt.
-    A = zeros(length(Korrespondenzen), 9);
-    % for each Spalte
-    for n = 1:length(Korrespondenzen)
-        A(n, :) = kron(x1(:, n), x2(:, n));
-    end
+    % Kroneckerprodukt für alle möglichen Paare von x1 und x2 berechnen
+    K = kron(x1, x2);
+    % K so maskieren, dass ein spaltenweises Kroneckerprodukt entsteht
+    Mask = logical(kron(eye(length(Korrespondenzen)), ones(9, 1)));
+    A = K(Mask);
+    % Die Maskierung wird mit linearen Indizes durchgeführt, daher muss der entstehende Vektor hier wieder in Matrixform gebracht werden. Danach Transposition, um eine Koeffizientenmatrix zu erhalten.
+    A = reshape(A, 9, [])';
+
+    % Lösung mit Schleife
+    %
+    % A = zeros(length(Korrespondenzen), 9);
+    % % for each Spalte
+    % for n = 1:length(Korrespondenzen)
+    %     A(n, :) = kron(x1(:, n), x2(:, n));
+    % end
+
     % Singulärwertzerlegung der Koeffizientenmatrix
     [~, ~, Va] = svd(A);
 
