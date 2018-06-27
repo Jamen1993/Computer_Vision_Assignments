@@ -1,4 +1,4 @@
-function [T, R, lambda, P1, camC1, camC2] = rekonstruktion(T1, T2, R1, R2, Korrespondenzen, K)
+function [T, R, lambda] = rekonstruktion(T1, T2, R1, R2, Korrespondenzen, K)
     % Rekonstruktion der Tiefeninformationen aus den Korrespondenzpunkpaaren.
     %
     % Tx - Lösungen für Translation
@@ -9,9 +9,6 @@ function [T, R, lambda, P1, camC1, camC2] = rekonstruktion(T1, T2, R1, R2, Korre
     % T - Translationsvektor für den die Lösung mit den meisten positiven Tiefeninformationen gefunden wurde
     % R - Rotationsmatrix für die die Lösung mit den meisten positiven Tiefeninformationen gefunden wurde
     % lambda - Tiefe der Korrespondenzpunktpaare für die beste gefundene Kombination aus T und R. In der linken Spalte stehen die Tiefen für das erste Kamerakoordinatensystem und in der zweiten analog die für das zweite.
-    % P1 - Korrespondenzpunkte in Raumkoordinaten bezogen auf das Kamerakoordinatensystem der ersten Kamera
-    % camC1 - Ecken der Bildebene für Kamera 1
-    % camC2 - Ecken der Bildebene für Kamera 2
 
     %% Vorbereitung
     % Cellarrays für T und R erstellen, die bei Iteration über den Index alle Kombinationen von T und R bilden.
@@ -104,8 +101,7 @@ function [T, R, lambda, P1, camC1, camC2] = rekonstruktion(T1, T2, R1, R2, Korre
     R = R_cell{i_best_combination};
     M = [     R      T
          zeros(1, 3) 1];
-    % @TODO
-    % Mir war an dieser Stelle leider nicht ganz klar, warum ich hier die inverse Transformation nutzen muss. Ich hatte erwartet, dass ich die Bewegung von camC1 nach camC2 in der Form camC2 = M * camC1 gegeben hätte. Warum ist das nicht so?
+    % Hier muss die inverse Transformation angewandt werden, weil die Koordinatentransformation in der Art definiert ist, dass sie ausdrückt wie sich die Koordinaten der Punkte beim Übergang von Kamera 1 auf Kamera 2 ändern. Ich möchte aber berechnen, wie sich die Position der Kamera beim Übergang ändert und das ist genau inverses Verhalten. Kommen die Punkte beim Wechsel zu Kamera 2 näher, muss sich Kamera 2 bezogen auf Kamera 1 nach vorne bewegen und umgekehrt.
     camC2_hom = M \ camC1_hom;
     % In inhomogene Koordinaten umwandeln
     camC2 = camC2_hom(1:3, :);
