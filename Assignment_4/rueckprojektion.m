@@ -1,4 +1,4 @@
-function [repro_error, x2_repro] = rueckprojektion(Korrespondenzen, P1, Image2, T, R, K)
+function [repro_error] = rueckprojektion(Korrespondenzen, P1, Image2, T, R, K)
     % Diese Funktion berechnet den mittleren Rückprojektionsfehler der Weltkoordinaten P1 aus Bild 1 im Kamerakoordinatensystem 2 und stellt sowohl die korrekten als auch die rückprojizierten Merkmalskoordinaten grafisch dar.
     %
     % Korrespondenzen - Matrix in der spaltenweise die Pixelkoordinaten von Korrespondenzpunktpaaren in der Form [x1; y1; x2; y2] abgelegt sind
@@ -8,7 +8,6 @@ function [repro_error, x2_repro] = rueckprojektion(Korrespondenzen, P1, Image2, 
     % K - Matrix der intrinsischen Kameraparameter K = Ks * Kf
     %
     % repro_error - Mittlerer Rückprojektionsfehler von P1 nach Projektion auf die Bildebene von Kamera 2
-    % x2_repro - homogene Bildkoordinaten nach Projektion von P1 zu Kamera 2
 
     %% Projektion von P1 in Bildebene von Kamera 2
     %
@@ -48,6 +47,4 @@ function [repro_error, x2_repro] = rueckprojektion(Korrespondenzen, P1, Image2, 
     % Verbindungslinien zwischen Original und Rückprojektion
     plot([get_x2_ref_row(1); get_x2_repro_row(1)], [get_x2_ref_row(2); get_x2_repro_row(2)], 'g');
     legend('Original Korrespondenzpunkt', 'Rueckprojektion', 'Paar');
-    % Dummy text um Assesment zu befriedigen (ich zeige die Paare mit Linien an, das finde ich intuitiver)
-    text();
 end

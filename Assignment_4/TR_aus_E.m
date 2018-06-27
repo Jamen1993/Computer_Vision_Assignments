@@ -7,8 +7,6 @@ function [T1, R1, T2, R2] = TR_aus_E(E)
     % T2 - Zweite Lösung für die Translationsmatrix T_hat mit Rz(-pi/2)
     % R1 - Erste Lösung für die Rotationsmatrix R mit Rz(pi/2)
     % R1 - Zweite Lösung für die Rotationsmatrix R mit Rz(-pi/2)
-    % U - Vordere Matrix der Singulärwertzerlegung von E
-    % V - Hintere Matrix der Singulärwertzerlegung von E
 
     % Singulärwertzerlegung von E durchführen
     [U, S, V] = svd(E);

@@ -30,4 +30,4 @@ load Korrespondenzen_robust_2;
 Image2 = imread('Scene_R.png');
 IGray2 = rgb_to_gray(Image2);
 % Rückprojektionsfehler berechnen
-[repro_error, x2_prime_hom] = rueckprojektion(Korrespondenzen_robust_2, P1, IGray2, T, R, K);
+[repro_error] = rueckprojektion(Korrespondenzen_robust_2, P1, IGray2, T, R, K);
